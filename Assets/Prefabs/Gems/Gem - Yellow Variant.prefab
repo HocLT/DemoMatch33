@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gem - Yellow Variant
       objectReference: {fileID: 0}
+    - target: {fileID: 1788141352910243391, guid: 9f8cc64ba52941f4d96a9292de9297ff, type: 3}
+      propertyPath: type
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 4074263807776483005, guid: 9f8cc64ba52941f4d96a9292de9297ff, type: 3}
       propertyPath: m_LocalPosition.x
       value: 9.23

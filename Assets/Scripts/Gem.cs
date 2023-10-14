@@ -16,6 +16,13 @@ public class Gem : MonoBehaviour
 
     Gem otherGem;
 
+    public enum GemType { blue, green, purple, yellow, red };
+    public GemType type;
+
+    public bool isMatch;    // default value is false
+
+    Vector2Int previousPos;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -25,13 +32,24 @@ public class Gem : MonoBehaviour
     void Update()
     {
         // swap gem
-
+        if (Vector2.Distance(transform.position, pos) > .01f)
+        {
+            transform.position = Vector2.Lerp(transform.position, pos, Time.deltaTime * board.gemSpeed);
+        }
+        else
+        {
+            transform.position = new Vector3(pos.x, pos.y, 0f);
+        }
         // xử lý sự kiện mouse release
         if (mousePressed && Input.GetMouseButtonUp(0))
         {
             mousePressed = false;
-            finalTouchPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            CalculateAngle();
+
+            if (board.currentState == Board.BoardState.move)
+            {
+                finalTouchPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                CalculateAngle();
+            }
         }
     }
 
@@ -60,6 +78,8 @@ public class Gem : MonoBehaviour
 
     void MovePieces()
     {
+        previousPos = pos;  // lưu lại vị trí cũ của gem
+
         if (swipeAngle > -45 && swipeAngle <= 45 && pos.x < board.width - 1)
         {
             otherGem = board.allGems[pos.x + 1, pos.y];
@@ -86,7 +106,42 @@ public class Gem : MonoBehaviour
         }
 
         // update lại thông tin của các gem
-        board.allGems[pos.x, pos.y] = this;
-        board.allGems[otherGem.pos.x, otherGem.pos.y] = otherGem;
+        if (otherGem != null)
+        {
+            board.allGems[pos.x, pos.y] = this;
+            board.allGems[otherGem.pos.x, otherGem.pos.y] = otherGem;
+
+            // run coroutine để kiểm tra xem có match3 hay không?
+            StartCoroutine(CheckMoveCo());
+        }
+    }
+
+    public IEnumerator CheckMoveCo()
+    {
+        board.currentState = Board.BoardState.wait;
+
+        yield return new WaitForSeconds(.5f);
+
+        // thực hiện kiểm tra match3
+        board.matchFinder.FindAllMatches();
+        if (otherGem != null)
+        {
+            // chuyển ngược nếu không match3
+            if (!isMatch && !otherGem.isMatch)
+            {
+                otherGem.pos = pos;
+                pos = previousPos;
+
+                board.allGems[pos.x, pos.y] = this;
+                board.allGems[otherGem.pos.x, otherGem.pos.y] = otherGem;
+
+                yield return new WaitForSeconds(.2f);
+                board.currentState = Board.BoardState.move;
+            }
+            else
+            {
+                board.DestroyMatches();
+            }
+        }
     }
 }
